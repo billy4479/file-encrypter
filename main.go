@@ -3,49 +3,41 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
-)
 
-var (
-	target      = flag.String("target", "", "the target to operate, can be either a directory or a file")
-	pass        = flag.String("password", "", "the password")
-	outLoc      = flag.String("o", "", "the output location")
-	decr        = flag.Bool("decrypt", false, "use it to decrypt a file already encrypted")
-	compression = flag.Bool("compression", false, "enable compression (lzma2)")
-	force       = flag.Bool("force", false, "when decrypting ingores the hash and extracts everything using the given password")
-)
-
-const (
-	comp byte = iota
-	unComp
+	"github.com/billy4479/file-encrypter/decryption"
+	"github.com/billy4479/file-encrypter/encryption"
 )
 
 func main() {
+	decrypt := flag.Bool("d", false, "Decrypt switch. Default: false")
+	outputPath := flag.String("o", "", "Output path. Default: the same as input but with '.crypt' at the end")
+	password := flag.String("p", "", "Password. Required")
+	inputFile := flag.String("i", "", "Input file. Required")
+	useCompression := flag.Bool("c", false, "Use lzma2 compression. Default: false")
+
 	flag.Parse()
-	if *target == "" {
-		log.Fatalln("Dir cannot be empty")
-	} else {
-		info, err := os.Stat(*target)
-		if err != nil {
-			panic(err)
-		}
-		if reg := info.Mode().IsRegular() || info.IsDir(); !reg {
-			fmt.Println("The file is not regular, is it a device?")
-			os.Exit(1)
-		}
-		if info.IsDir() && *decr {
-			fmt.Println("Cannot use a directory as the decompression target")
-			os.Exit(1)
-		}
-	}
-	if *pass == "" {
-		fmt.Println("Password cannot be empty")
+
+	if *inputFile == "" {
+		fmt.Println("Please enter an input file.")
 		os.Exit(1)
 	}
-	if *decr {
-		decrypt()
-	} else {
-		encrypt()
+
+	if *password == "" {
+		fmt.Println("Please enter a password.")
+		os.Exit(1)
 	}
+
+	var err error
+	if *decrypt {
+		err = decryption.Decrypt(*inputFile, *outputPath)
+	} else {
+		err = encryption.Encrypt(*inputFile, *outputPath, *useCompression)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 }
